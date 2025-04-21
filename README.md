@@ -197,3 +197,44 @@ dart bin/main.dart
 ```
 
 Then open your browser and go to `http://localhost:8081`. You should see the app running. You can draw on the canvas by selecting a color and clicking on a pixel.
+
+### Step 5: Share state between apps
+
+#### 5.1 Create models
+
+In order to share the state between apps, we need our server to become authoritative over the state. This means that the server will be responsible for storing the state and sending it to the clients.
+
+To allow the server to share state with the apps we will introduce two models:
+
+- `ImageData`: This model will be used to share the full image data with the clients. It will be used to send the full image data to the clients when they connect to the server.
+- `ImageUpdate`: This model will be used to communicate a single pixel update to and from clients.
+
+We will add these as models to the `pixorama_server` project. Open the `lib/src/protocol/models` directory and create two new files, `image_data.spy.yaml` and `image_update.spy.yaml`.
+
+Add the following code to the `image_update.spy.yaml` file:
+
+```yaml
+class: ImageData
+fields:
+  pixels: ByteData
+  width: int
+  height: int
+```
+
+Add the following code to the `image_update.spy.yaml` file:
+
+```yaml
+class: ImageUpdate
+fields:
+  pixelIndex: int
+  colorIndex: int
+```
+
+Now we need to generate the models. Run the following command in the `pixorama_server` directory:
+
+```bash
+# In the pixorama_server directory
+serverpod generate
+```
+
+The files will be generated in the `lib/src/protocol/generated` directory. You should see two new files, `image_data.dart` and `image_update.dart`. These files contain the generated code for the models.
