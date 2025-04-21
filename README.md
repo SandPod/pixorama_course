@@ -73,3 +73,45 @@ flutter run -d chrome
 ```
 
 You should now be able to run the app and see a blank canvas. You can draw on the canvas by selecting a color and clicking on a pixel.
+
+### Step 4: Serve app from Serverpod Server
+
+#### 4.1 Prepare flutter assets 
+In order to serve the app from the Serverpod server, you first need to build the app. Run the following command in the `pixorama_flutter` directory:
+
+```bash
+# In the pixorama_flutter directory
+flutter build web
+```
+
+This will create a `build/web` directory containing the built ready to be served. 
+
+Create a new directory called `web` in the `pixorama_server` directory. This is where the built app will be served from.
+
+```bash
+# In the pixorama_server directory
+mkdir -p web/app
+```
+
+Copy the contents of the `pixorama_flutter/build/web` directory to the `pixorama_server/web/app` directory.
+
+```bash
+# In the serverpod project directory
+cp -r pixorama_flutter/build/web/ pixorama_server/web/app
+```
+
+As a last step we need to configure a template file. Create a new directory called `templates` in the `pixorama_server/web` directory. This is where the template file will be served from.
+
+```bash
+# In the pixorama_server directory
+mkdir -p web/templates
+```
+
+Then move the `index.html` file from the `web/app` directory to the `web/templates` directory.
+
+```bash
+# In the pixorama_server directory
+mv web/app/index.html web/templates
+```
+
+This file is needed to serve the app.
