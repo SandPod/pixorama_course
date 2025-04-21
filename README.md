@@ -115,3 +115,85 @@ mv web/app/index.html web/templates
 ```
 
 This file is needed to serve the app.
+
+#### 4.2 Configure serverpod to serve the app
+
+To serve the app we need the web server running in Serverpod. This is done by adding configuration for the web server in `pixorama_server/lib/serer.dart` file.
+
+Add a config for the web server to Serverpod:
+
+```dart
+  final pod = Serverpod(
+    args,
+    Protocol(),
+    Endpoints(),
+    config: ServerpodConfig(
+      // Api server configuration
+      apiServer: ServerConfig(
+        port: 8080,
+        publicScheme: 'http',
+        publicHost: 'localhost',
+        publicPort: 8080,
+      ),
+      // Add a web server to serve static files.
+      webServer: ServerConfig(
+        port: 8081,
+        publicScheme: 'http',
+        publicHost: 'localhost',
+        publicPort: 8081,
+      ),
+    ),
+  );
+```
+
+Now that we have the web server configured, we will add a route to serve the app.
+
+First we create the route in `lib/src/web/index_route.dart` file:
+
+```dart
+import 'dart:io';
+
+import 'package:serverpod/serverpod.dart';
+
+/// A route that serves the index page of the web application.
+/// The route is registered as a route in the web server.
+/// The name of the widget should correspond to a template file in the server's
+/// web/templates directory. The template is loaded when the server starts.
+class IndexRoute extends WidgetRoute {
+  @override
+  Future<Widget> build(Session session, HttpRequest request) async {
+    return Widget(name: 'index');
+  }
+}
+```
+
+The route serves the `index.html` file from the `web/templates` directory. The name of the widget should correspond to a template file in the server's web/templates directory. The template is loaded when the server starts.
+
+Now we need to register the route in Serverpod. Open the `lib/src/server.dart` file and add the following code before starting the server:
+
+```dart
+  // Setup a default page at the web root.
+  pod.webServer.addRoute(IndexRoute(), '/');
+  pod.webServer.addRoute(IndexRoute(), '/index.html');
+```
+
+But if we start the server now, we will get an error becuase the assets are not served from the `app` directory. To fix this we need to also serve the assets through a `routeStaticDirectory` route.
+
+Add the following code to the `lib/src/server.dart` file:
+
+```dart
+  // Serve all files in the /app directory.
+  pod.webServer.addRoute(
+    RouteStaticDirectory(serverDirectory: 'app', basePath: '/'),
+    '/*',
+  );
+```
+
+Now start the server by running the following command in the `pixorama_server` directory:
+
+```bash
+# In the pixorama_server directory
+dart bin/main.dart
+```
+
+Then open your browser and go to `http://localhost:8081`. You should see the app running. You can draw on the canvas by selecting a color and clicking on a pixel.
