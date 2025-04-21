@@ -53,3 +53,23 @@ flutter run -d chrome
 ```
 
 The example application should now be running in your browser.
+
+### Step 3: Build the pixel drawing canvas
+
+In the `pixorama_flutter` directory, add the `pixel` package dependency by running the following command:
+
+```bash
+# In the pixorama_flutter directory
+flutter pub add pixel
+```
+
+Replace `MyHomePage` and `MyHomePageState` with the example provided in the `pixels` package documentation on [pub.dev](https://pub.dev/packages/pixels).
+
+Start the app by running the following command:
+
+```bash
+# In the pixorama_flutter directory
+flutter run -d chrome
+```
+
+You should now be able to run the app and see a blank canvas. You can draw on the canvas by selecting a color and clicking on a pixel.
