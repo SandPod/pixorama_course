@@ -351,3 +351,143 @@ This will generate the code for the endpoints in the client. You should be able 
 client.pixorama.setPixel(...);
 client.pixorama.imageUpdates(...);
 ```
+
+#### 5.3 Use endpoints in application
+
+Now we need to use our endpoints in the application. We will start with sharing what we click on with the server.
+
+Open the `pixorama_flutter/lib/main.dart` file and add the following to the `PixelEditor` widgets constructor:
+
+```dart
+onSetPixel: (details) {
+  // When a user clicks a pixel we will get a callback from the
+  // PixelImageController, with information about the changed
+  // pixel. When that happens we call the setPixels method on
+  // the server.
+  client.pixorama.setPixel(
+    pixelIndex: details.tapDetails.index,
+    colorIndex: details.colorIndex,
+  );
+},
+```
+
+This will call the `setPixel` method on the server when a user clicks a pixel. The `details` object contains information about the clicked pixel and the color index.
+
+Now we need to make the server authoritative over the state. This means that we need to get the image data from the server when we start the app and listen for updates from the server.
+
+We start by adding a method for fetching and listening to updated from the server. Add the following method to `_MyHomePageState` class:
+
+```dart
+  Future<void> _listenToUpdates() async {
+    // Indefinitely try to connect and listen to updates from the server.
+    while (true) {
+      try {
+        // Get the stream of updates from the server.
+        final imageUpdates = client.pixorama.imageUpdates();
+
+        // Listen for updates from the stream. The await for construct will
+        // wait for a message to arrive from the server, then run through the
+        // body of the loop.
+        await for (final update in imageUpdates) {
+          // Check which type of update we have received.
+          if (update is ImageData) {
+            // This is a complete image update, containing all pixels in the
+            // image. Create a new PixelImageController with the pixel data.
+            setState(() {
+              _controller = PixelImageController(
+                pixels: update.pixels,
+                palette: PixelPalette.rPlace(),
+                width: update.width,
+                height: update.height,
+              );
+            });
+          } else if (update is ImageUpdate) {
+            // Got an incremental update of the image. Just set the single
+            // pixel.
+            _controller?.setPixelIndex(
+              pixelIndex: update.pixelIndex,
+              colorIndex: update.colorIndex,
+            );
+          }
+        }
+      } on MethodStreamException catch (_) {
+        // We lost the connection to the server, or failed to connect.
+        setState(() {
+          _controller = null;
+        });
+      }
+
+      // Wait 5 seconds until we try to connect again.
+      await Future.delayed(Duration(seconds: 5));
+    }
+  }
+```
+
+This method will try to connect to the server and listen for updates. If the connection fails, it will wait 5 seconds and try again.
+
+It will also initiate the `_controller` variable with the pixel data from the server.
+
+For this to work we need to make `_controller` a nullable variable instead of instantiated when the app is started. Change the following line:
+
+```dart
+PixelImageController? _controller;
+```
+
+Now that the controller is nullable, we need to check if it is null before using it. Replace the `Center` widget in the `build` method with the following code:
+
+```dart
+Center(
+  child: _controller == null
+      ? const CircularProgressIndicator()
+      : PixelEditor(
+          controller: _controller!,
+          onSetPixel: (details) {
+            // When a user clicks a pixel we will get a callback from the
+            // PixelImageController, with information about the changed
+            // pixel. When that happens we call the setPixels method on
+            // the server.
+            client.pixorama.setPixel(
+              pixelIndex: details.tapDetails.index,
+              colorIndex: details.colorIndex,
+            );
+          },
+        ),
+)
+```
+
+This will show a loading indicator while the app is waiting for the server to send the image data. When the image data is received, it will show the `PixelEditor` widget.
+
+Now we need to call the `_listenToUpdates` method when the app starts to start listening for updates from the server. Add the following code to the `initState` method:
+
+```dart
+  @override
+  void initState() {
+    super.initState();
+
+    // Connect to the server and start listening to updates.
+    _listenToUpdates();
+  }
+```
+
+Now we need to build and copy the app to the server again.
+
+```bash
+# In the pixorama_flutter directory
+flutter build web
+```
+
+```bash
+# In the serverpod project directory
+cp -r pixorama_flutter/build/web/ pixorama_server/web/app
+```
+
+Then start the server by running the following command in the `pixorama_server` directory:
+
+```bash
+# In the pixorama_server directory
+dart bin/main.dart
+```
+
+Then open your browser and go to `http://localhost:8081`. You should see the app running. If you open the app in multiple tabs, you should see that the changes are reflected in all tabs.
+
+And that should be it! Nice work! 🎉🚀

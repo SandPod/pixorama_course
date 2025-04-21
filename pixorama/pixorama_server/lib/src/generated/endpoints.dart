@@ -11,6 +11,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 import '../endpoints/example_endpoint.dart' as _i2;
+import '../endpoints/pixorama_endpoint.dart' as _i3;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -21,7 +22,13 @@ class Endpoints extends _i1.EndpointDispatch {
           server,
           'example',
           null,
-        )
+        ),
+      'pixorama': _i3.PixoramaEndpoint()
+        ..initialize(
+          server,
+          'pixorama',
+          null,
+        ),
     };
     connectors['example'] = _i1.EndpointConnector(
       name: 'example',
@@ -45,6 +52,49 @@ class Endpoints extends _i1.EndpointDispatch {
             params['name'],
           ),
         )
+      },
+    );
+    connectors['pixorama'] = _i1.EndpointConnector(
+      name: 'pixorama',
+      endpoint: endpoints['pixorama']!,
+      methodConnectors: {
+        'setPixel': _i1.MethodConnector(
+          name: 'setPixel',
+          params: {
+            'colorIndex': _i1.ParameterDescription(
+              name: 'colorIndex',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'pixelIndex': _i1.ParameterDescription(
+              name: 'pixelIndex',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['pixorama'] as _i3.PixoramaEndpoint).setPixel(
+            session,
+            colorIndex: params['colorIndex'],
+            pixelIndex: params['pixelIndex'],
+          ),
+        ),
+        'imageUpdates': _i1.MethodStreamConnector(
+          name: 'imageUpdates',
+          params: {},
+          streamParams: {},
+          returnType: _i1.MethodStreamReturnType.streamType,
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+            Map<String, Stream> streamParams,
+          ) =>
+              (endpoints['pixorama'] as _i3.PixoramaEndpoint)
+                  .imageUpdates(session),
+        ),
       },
     );
   }

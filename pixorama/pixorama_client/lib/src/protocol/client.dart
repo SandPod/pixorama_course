@@ -27,6 +27,39 @@ class EndpointExample extends _i1.EndpointRef {
       );
 }
 
+/// {@category Endpoint}
+class EndpointPixorama extends _i1.EndpointRef {
+  EndpointPixorama(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'pixorama';
+
+  /// Sets a single pixel and notifies all connected clients about the change.
+  _i2.Future<void> setPixel({
+    required int colorIndex,
+    required int pixelIndex,
+  }) =>
+      caller.callServerEndpoint<void>(
+        'pixorama',
+        'setPixel',
+        {
+          'colorIndex': colorIndex,
+          'pixelIndex': pixelIndex,
+        },
+      );
+
+  /// Returns a stream of image updates. The first message will always be a
+  /// `ImageData` object, which contains the full image. Sequential updates
+  /// will be `ImageUpdate` objects, which contains a single updated pixel.
+  _i2.Stream<dynamic> imageUpdates() =>
+      caller.callStreamingServerEndpoint<_i2.Stream<dynamic>, dynamic>(
+        'pixorama',
+        'imageUpdates',
+        {},
+        {},
+      );
+}
+
 class Client extends _i1.ServerpodClientShared {
   Client(
     String host, {
@@ -54,12 +87,18 @@ class Client extends _i1.ServerpodClientShared {
               disconnectStreamsOnLostInternetConnection,
         ) {
     example = EndpointExample(this);
+    pixorama = EndpointPixorama(this);
   }
 
   late final EndpointExample example;
 
+  late final EndpointPixorama pixorama;
+
   @override
-  Map<String, _i1.EndpointRef> get endpointRefLookup => {'example': example};
+  Map<String, _i1.EndpointRef> get endpointRefLookup => {
+        'example': example,
+        'pixorama': pixorama,
+      };
 
   @override
   Map<String, _i1.ModuleEndpointCaller> get moduleLookup => {};
