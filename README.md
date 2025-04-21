@@ -238,3 +238,116 @@ serverpod generate
 ```
 
 The files will be generated in the `lib/src/protocol/generated` directory. You should see two new files, `image_data.dart` and `image_update.dart`. These files contain the generated code for the models.
+
+#### 5.2 Create new endpoints 
+
+Now we need to actually store the state in the server and then make it possible for the apps to communicate with the server.
+
+We will store the state directly in the endpoint we will be using. Create a new file called `pixorama_endpoint` in the `lib/src/endpoints` directory and add the following code:
+
+```dart
+import 'dart:typed_data';
+
+import 'package:serverpod/serverpod.dart';
+
+class PixoramaEndpoint extends Endpoint {
+  static const _imageWidth = 64;
+  static const _imageHeight = 64;
+  static const _numPixels = _imageWidth * _imageHeight;
+
+  static const _numColorsInPalette = 16;
+  static const _defaultPixelColor = 2;
+
+  final _pixelData = Uint8List(_numPixels)
+    ..fillRange(
+      0,
+      _numPixels,
+      _defaultPixelColor,
+    );
+
+  static const _channelPixelAdded = 'pixel-added';
+}
+```
+
+We will store the pixel data in an `Uint8List` array. This will be used to store the pixel data for the image. The image will be 64x64 pixels and will have 16 colors in the palette. The default color for the pixels will be 2.
+
+Now we will create 2 endpoints to communicate our with out application. 
+
+Inside of the `PixoramaEndpoint` class, add the following method: 
+
+```dart
+  /// Sets a single pixel and notifies all connected clients about the change.
+  Future<void> setPixel(
+    Session session, {
+    required int colorIndex,
+    required int pixelIndex,
+  }) async {
+    // Check that the input parameters are valid. If not, throw a
+    // `FormatException`, which will be logged and thrown as
+    // `ServerpodClientException` in the app.
+    if (colorIndex < 0 || colorIndex >= _numColorsInPalette) {
+      throw FormatException('colorIndex is out of range: $colorIndex');
+    }
+    if (pixelIndex < 0 || pixelIndex >= _numPixels) {
+      throw FormatException('pixelIndex is out of range: $pixelIndex');
+    }
+
+    // Update our global image.
+    _pixelData[pixelIndex] = colorIndex;
+
+    // Notify all connected clients that we set a pixel, by posting a message
+    // to the _channelPixelAdded channel.
+    session.messages.postMessage(
+      _channelPixelAdded,
+      ImageUpdate(
+        pixelIndex: pixelIndex,
+        colorIndex: colorIndex,
+      ),
+    );
+  }
+```
+
+This endpoint is responsible for setting a single pixel in the image and then notifying all connected clients about the change.
+
+Then add the following method:
+
+```dart
+  /// Returns a stream of image updates. The first message will always be a
+  /// `ImageData` object, which contains the full image. Sequential updates
+  /// will be `ImageUpdate` objects, which contains a single updated pixel.
+  Stream imageUpdates(Session session) async* {
+    // Request a stream of updates from the pixel-added channel in
+    // MessageCentral.
+    var updateStream =
+        session.messages.createStream<ImageUpdate>(_channelPixelAdded);
+
+    // Yield a first full image to the client.
+    yield ImageData(
+      pixels: _pixelData.buffer.asByteData(),
+      width: _imageWidth,
+      height: _imageHeight,
+    );
+
+    // Relay all individual pixel updates from the pixel-added channel to
+    // the client.
+    await for (var imageUpdate in updateStream) {
+      yield imageUpdate;
+    }
+  }
+```
+
+This endpoint streams image updates to connected clients. The first message sent will be the full image data. The following messages will be updates to single pixels.
+
+Now to update our client and server to be aware of the endpoints we need to generate the code again.
+
+```bash
+# In the pixorama_server directory
+serverpod generate
+```
+
+This will generate the code for the endpoints in the client. You should be able to see them as autocomplete suggestion on the client that is instantiated in the flutter app.
+
+```dart
+client.pixorama.setPixel(...);
+client.pixorama.imageUpdates(...);
+```

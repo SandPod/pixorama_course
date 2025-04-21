@@ -12,7 +12,11 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
 import 'example.dart' as _i3;
+import 'image_data.dart' as _i4;
+import 'image_update.dart' as _i5;
 export 'example.dart';
+export 'image_data.dart';
+export 'image_update.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -34,8 +38,20 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i3.Example) {
       return _i3.Example.fromJson(data) as T;
     }
+    if (t == _i4.ImageData) {
+      return _i4.ImageData.fromJson(data) as T;
+    }
+    if (t == _i5.ImageUpdate) {
+      return _i5.ImageUpdate.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i3.Example?>()) {
       return (data != null ? _i3.Example.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i4.ImageData?>()) {
+      return (data != null ? _i4.ImageData.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i5.ImageUpdate?>()) {
+      return (data != null ? _i5.ImageUpdate.fromJson(data) : null) as T;
     }
     try {
       return _i2.Protocol().deserialize<T>(data, t);
@@ -49,6 +65,12 @@ class Protocol extends _i1.SerializationManagerServer {
     if (className != null) return className;
     if (data is _i3.Example) {
       return 'Example';
+    }
+    if (data is _i4.ImageData) {
+      return 'ImageData';
+    }
+    if (data is _i5.ImageUpdate) {
+      return 'ImageUpdate';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -65,6 +87,12 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (dataClassName == 'Example') {
       return deserialize<_i3.Example>(data['data']);
+    }
+    if (dataClassName == 'ImageData') {
+      return deserialize<_i4.ImageData>(data['data']);
+    }
+    if (dataClassName == 'ImageUpdate') {
+      return deserialize<_i5.ImageUpdate>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
